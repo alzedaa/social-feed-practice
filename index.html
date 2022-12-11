@@ -1,0 +1,135 @@
+<html>
+  <head>
+    <title>Social Media Disaster Monitoring Application</title>
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://unpkg.com/vuex@4"></script>
+    <script src="https://unpkg.com/vue-router@4"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-3-socket.io@1.0.5/dist/vue-socketio.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-size: 24px;
+      }
+      a {
+        padding: 10px;
+      }
+      td,
+      tr,
+      th,
+      table {
+        border: 2px solid black;
+        padding: 20px;
+        font-size: 32px;
+      }
+      table {
+        border-collapse: collapse;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="flex">
+        <div class="w-3/12 border-r border-black p-4 text-base">
+          <router-link to="/" class="block">Home</router-link>
+          <router-link to="/feed" class="block">Feed</router-link>
+          <router-link to="/analytics" class="blocks">Analxytics</router-link>
+        </div>
+      </div>
+      <div>
+        <router-view></router-view>
+      </div>
+    </div>
+
+    <script>
+      const HomeView = {
+        template: `
+        <div>
+          <p>Home</p>
+          </div>
+        `,
+      };
+
+      const LiveFeedView = {
+        template: `
+        <div v-for="message in feed">
+          <div class="border border-gray-400 rounded-xl p-4 mb-2">
+            <div class="flex text-base gap-4">
+              <div class="font-bold">Name</div>
+              <div>{{message.name}}</div>
+            </div>
+            <div class="flex text-base gap-4">
+              <div class="font-bold">Priority</div>
+              <div>{{message.priority}}</div>
+            </div>
+            <div class="flex text-base gap-4">
+              <div class="font-bold">Problem</div>
+              <div>{{message.problem}}</div>
+            </div>
+            <div class="flex text-base gap-4">
+              <div class="font-bold">Content</div>
+              <div>{{message.content}}</div>
+            </div>
+            <div class="flex text-base gap-4">
+              <div class="font-bold">Image</div>
+              <div class=""><img :src="message.image"/></div>
+            </div>
+          </div>
+        </div>
+
+        `,
+        data() {
+          return {
+            incomingMessages: [],
+          };
+        },
+        computed: {
+          feed() {
+            return this.incomingMessages.reverse();
+          },
+        },
+        created() {
+          this.sockets.subscribe("post", (data) => {
+            this.incomingMessages.push(data);
+            console.log(data);
+          });
+        },
+        mounted() {},
+        destroyed() {
+          this.sockets.unsubscribe("post");
+        },
+      };
+
+      const AnalyticView = {
+        template: `
+        <div>
+          Analytics
+          </div>
+        `,
+      };
+
+      const routes = [
+        { path: "/", component: HomeView },
+        { path: "/feed", component: LiveFeedView },
+        { path: "/analytics", component: AnalyticView },
+      ];
+
+      const router = VueRouter.createRouter({
+        // 4. Provide the history implementation to use. We are using the hash history for simplicity here.
+        history: VueRouter.createWebHashHistory(),
+        routes, // short for `routes: routes`
+      });
+
+      const app = Vue.createApp({});
+
+      const socket = new VueSocketIO({
+        debug: true,
+        connection: "http://localhost:3000",
+      });
+
+      app.use(router);
+      app.use(socket);
+      app.mount("#app");
+    </script>
+  </body>
+</html>
